@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  lemax.booking.hotelmanagement.api:
+    image: ${DOCKER_REGISTRY-}lemaxbookinghotelmanagementapi
+    build:
+      context: .
+      dockerfile: Services/Lemax.Booking.HotelManagement.API/Dockerfile
+    ports:
+      - "5001:8080"
+    depends_on:
+      - sqlserver
+    environment:
+      - ConnectionStrings__BookingContext=Server=sqlserver;Database=BookingDB;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;Encrypt=false
+      - SearchApi__BaseUrl=http://lemax.booking.search.api:8080
+
+  lemax.booking.search.api:
+    image: ${DOCKER_REGISTRY-}lemaxbookingsearchapi
+    build:
+      context: .
+      dockerfile: Services/Lemax.Booking.Search.API/Dockerfile
+    ports:
+      - "5178:8080"
+    depends_on:
+      - elasticsearch
+    environment:
+      - Elasticsearch__Url=http://elasticsearch:9200
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      SA_PASSWORD: "YourStrong!Passw0rd"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1434:1433"
+    volumes:
+      - sqlserverdata:/var/opt/mssql
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
+    environment:
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearchdata:/usr/share/elasticsearch/data
+
+volumes:
+  sqlserverdata:
+  elasticsearchdata:
